@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TVCAS Tool</title>
+<style>
+:root{
+--s1:#1a1d24;--s2:#20242c;--s3:#262b34;--s4:#2c323c;
+--bd:#33393f;--bd2:#3d434b;
+--t0:#e8eaed;--t1:#a9afb8;--t2:#7a828d;
+--p:#5b7fff;--p2:#4a6ee0;--pg:#5b7fff55;--ps:#5b7fff33;
+--gr:#3ecf8e;--re:#ef5f5f;--cy:#4fd1e8;
+--r:10px;--rsm:7px;--rxs:5px;
+--sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+--mono:'JetBrains Mono',Consolas,monospace;
+--ease:cubic-bezier(.22,1,.36,1);
+}
+body{background:var(--s1);color:var(--t0);font-family:var(--sans);margin:0;padding:24px}
+@keyframes fu{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+.tv-tabs{display:flex;gap:2px;margin-bottom:20px;
+background:var(--s2);border:1px solid var(--bd);
+border-radius:var(--rsm);padding:4px}
+.tv-tab{flex:1;padding:8px 16px;cursor:pointer;font-size:12.5px;
+font-weight:600;font-family:var(--sans);letter-spacing:.03em;
+color:var(--t1);border-radius:var(--rxs);border:1px solid transparent;
+background:none;transition:all .18s}
+.tv-tab.active{background:var(--s4);color:var(--p);border-color:var(--pg)}
+.tv-tab:hover:not(.active){color:var(--t0);background:var(--s3)}
+.tv-panel{display:none}.tv-panel.active{display:block}
+
+.tv-card{background:var(--s1);border:1px solid var(--bd);
+border-radius:var(--r);padding:18px 20px;margin-bottom:14px;
+animation:fu .3s var(--ease) both}
+
+.tv-lbl{font-size:10px;font-weight:700;text-transform:uppercase;
+letter-spacing:.10em;color:var(--t1);margin-bottom:5px;margin-top:12px}
+.tv-lbl:first-child{margin-top:0}
+
+.tv-inp{width:100%;background:var(--s2);border:1px solid var(--bd2);
+border-radius:var(--rsm);color:var(--t0);font-family:var(--mono);
+font-size:12.5px;padding:8px 12px;outline:none;
+transition:border-color .18s;box-sizing:border-box}
+.tv-inp:focus{border-color:var(--pg);box-shadow:0 0 0 3px var(--ps)}
+textarea.tv-inp{resize:vertical;min-height:56px;line-height:1.6}
+
+.tv-btn{display:inline-flex;align-items:center;gap:6px;
+background:var(--p);border:none;border-radius:var(--rsm);color:#fff;
+font-family:var(--sans);font-size:13px;font-weight:600;
+padding:9px 22px;cursor:pointer;margin-top:12px;
+transition:background .18s,box-shadow .18s;letter-spacing:.02em}
+.tv-btn:hover{background:var(--p2);box-shadow:0 0 0 3px var(--pg)}
+
+.tv-res{background:var(--s2);border:1px solid var(--bd);
+border-radius:var(--rsm);overflow:hidden;min-height:48px}
+.tv-res-empty{padding:14px 16px;font-size:12px;color:var(--t2);
+font-family:var(--mono)}
+
+.tv-tbl{width:100%;border-collapse:collapse}
+.tv-tbl tr{border-bottom:1px solid var(--bd)}
+.tv-tbl tr:last-child{border-bottom:none}
+.tv-tbl td{padding:9px 14px;font-family:var(--mono);font-size:12.5px;
+vertical-align:middle}
+.tv-tbl td.tk{color:var(--t2);font-size:10px;font-weight:700;
+text-transform:uppercase;letter-spacing:.10em;white-space:nowrap;
+width:110px;border-right:1px solid var(--bd);background:var(--s1)}
+.tv-tbl td.tv{color:var(--t0);padding-left:16px;word-break:break-all}
+
+.tv-split{display:flex;gap:0;border-bottom:1px solid var(--bd)}
+.tv-split-box{flex:1;border-right:1px solid var(--bd)}
+.tv-split-box:last-child{border-right:none}
+.tv-split-hdr{font-size:9px;font-weight:700;letter-spacing:.14em;
+text-transform:uppercase;color:var(--p);background:var(--s1);
+padding:6px 14px;border-bottom:1px solid var(--bd)}
+
+.tv-rgrp{display:flex;align-items:center;gap:14px;margin-bottom:12px;
+flex-wrap:wrap}
+.tv-rgrp label{display:flex;align-items:center;gap:6px;
+cursor:pointer;font-size:13px;font-weight:500;color:var(--t0)}
+.tv-rgrp span{font-size:10px;font-weight:700;letter-spacing:.10em;
+text-transform:uppercase;color:var(--t2)}
+
+.tv-ok{color:var(--gr)}
+.tv-er{color:var(--re)}
+.tv-hi{color:var(--cy)}
+.tv-cw{font-family:var(--mono);font-size:13px;font-weight:700;
+color:var(--cy);letter-spacing:.4px;word-break:break-all}
+.tv-ts{color:var(--t0)}
+.tv-dim{color:var(--t2)}
+.tv-wrap{max-width:760px;margin:0 auto}
+</style>
+</head>
+<body>
+<div class="tv-wrap">
+<div class="tv-tabs">
+<button class="tv-tab active" onclick="tvTab(0)">
+<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:5px">
+<rect x="3" y="11" width="18" height="11" rx="2"/>
+<path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+</svg>ECM Decryptor</button>
+<button class="tv-tab" onclick="tvTab(1)">
+<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:5px">
+<polyline points="16 3 21 3 21 8"/>
+<line x1="4" y1="20" x2="21" y2="3"/>
+<polyline points="21 16 21 21 16 21"/>
+<line x1="15" y1="15" x2="21" y2="21"/>
+</svg>Key Converter</button>
+</div>
+
+<div id="tvp0" class="tv-panel active">
+<div class="tv-card">
+<div class="tv-rgrp">
+<span>Version</span>
+<label><input type="radio" name="ecm_v" value="3" onchange="tvVC()">TVCAS3</label>
+<label><input type="radio" name="ecm_v" value="4" onchange="tvVC()" checked>TVCAS4</label>
+</div>
+<div class="tv-lbl">ECM — 110 hex chars (header 80 or 81 selects key half)</div>
+<textarea id="ecm_in" class="tv-inp" rows="2" placeholder="80... or 81... (110 hex chars)"></textarea>
+<div id="k3r" style="display:none">
+<div class="tv-lbl">TVCAS3 Key — 32 or 64 hex chars</div>
+<input id="k3in" class="tv-inp" type="text" placeholder="TVCAS3 key hex...">
+</div>
+<div id="k4r">
+<div class="tv-lbl">TVCAS4 Key — 64 hex chars</div>
+<input id="k4in" class="tv-inp" type="text" placeholder="TVCAS4 key hex...">
+</div>
+<button class="tv-btn" onclick="tvDec()">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+</svg>Decrypt ECM</button>
+</div>
+<div class="tv-card">
+<div class="tv-lbl" style="margin-top:0">Result</div>
+<div id="ecm_res" class="tv-res">
+<div class="tv-res-empty tv-dim">— run decryption to see result —</div>
+</div>
+</div>
+</div>
+
+<div id="tvp1" class="tv-panel">
+<div class="tv-card">
+<div class="tv-rgrp">
+<span>Direction</span>
+<label><input type="radio" name="cv_d" value="3to4" onchange="tvDC()" checked>3 &rarr; 4</label>
+<label><input type="radio" name="cv_d" value="4to3" onchange="tvDC()">4 &rarr; 3</label>
+</div>
+<div id="cv_il" class="tv-lbl">TVCAS3 Key — 32 or 64 hex chars</div>
+<input id="cv_in" class="tv-inp" type="text" placeholder="Key hex...">
+<button class="tv-btn" onclick="tvConv()">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
+<polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+</svg>Convert</button>
+</div>
+<div class="tv-card">
+<div id="cv_ol" class="tv-lbl" style="margin-top:0">TVCAS4 Key</div>
+<div id="cv_res" class="tv-res">
+<div class="tv-res-empty tv-dim">— run conversion to see result —</div>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+const CT=new Uint8Array([
+0xDA,0x26,0xE8,0x72,0x11,0x52,0x3E,0x46,0x32,0xFF,0x8C,0x1E,0xA7,0xBE,0x2C,0x29,
+0x5F,0x86,0x7E,0x75,0x0A,0x08,0xA5,0x21,0x61,0xFB,0x7A,0x58,0x60,0xF7,0x81,0x4F,
+0xE4,0xFC,0xDF,0xB1,0xBB,0x6A,0x02,0xB3,0x0B,0x6E,0x5D,0x5C,0xD5,0xCF,0xCA,0x2A,
+0x14,0xB7,0x90,0xF3,0xD9,0x37,0x3A,0x59,0x44,0x69,0xC9,0x78,0x30,0x16,0x39,0x9A,
+0x0D,0x05,0x1F,0x8B,0x5E,0xEE,0x1B,0xC4,0x76,0x43,0xBD,0xEB,0x42,0xEF,0xF9,0xD0,
+0x4D,0xE3,0xF4,0x57,0x56,0xA3,0x0F,0xA6,0x50,0xFD,0xDE,0xD2,0x80,0x4C,0xD3,0xCB,
+0xF8,0x49,0x8F,0x22,0x71,0x84,0x33,0xE0,0x47,0xC2,0x93,0xBC,0x7C,0x3B,0x9C,0x7D,
+0xEC,0xC3,0xF1,0x89,0xCE,0x98,0xA2,0xE1,0xC1,0xF2,0x27,0x12,0x01,0xEA,0xE5,0x9B,
+0x25,0x87,0x96,0x7B,0x34,0x45,0xAD,0xD1,0xB5,0xDB,0x83,0x55,0xB0,0x9E,0x19,0xD7,
+0x17,0xC6,0x35,0xD8,0xF0,0xAE,0xD4,0x2B,0x1D,0xA0,0x99,0x8A,0x15,0x00,0xAF,0x2D,
+0x09,0xA8,0xF5,0x6C,0xA1,0x63,0x67,0x51,0x3C,0xB2,0xC0,0xED,0x94,0x03,0x6F,0xBA,
+0x3F,0x4E,0x62,0x92,0x85,0xDD,0xAB,0xFE,0x10,0x2E,0x68,0x65,0xE7,0x04,0xF6,0x0C,
+0x20,0x1C,0xA9,0x53,0x40,0x77,0x2F,0xA4,0xFA,0x6D,0x73,0x28,0xE2,0xCD,0x79,0xC8,
+0x97,0x66,0x8E,0x82,0x74,0x06,0xC7,0x88,0x1A,0x4A,0x6B,0xCC,0x41,0xE9,0x9D,0xB8,
+0x23,0x9F,0x3D,0xBF,0x8D,0x95,0xC5,0x13,0xB9,0x24,0x5A,0xDC,0x64,0x18,0x38,0x91,
+0x7F,0x5B,0x70,0x54,0x07,0xB6,0x4B,0x0E,0x36,0xAC,0x31,0xE6,0xD6,0x48,0xAA,0xB4]);
+
+const DES=(()=>{
+const IP=[58,50,42,34,26,18,10,2,60,52,44,36,28,20,12,4,62,54,46,38,30,22,14,6,
+64,56,48,40,32,24,16,8,57,49,41,33,25,17,9,1,59,51,43,35,27,19,11,3,
+61,53,45,37,29,21,13,5,63,55,47,39,31,23,15,7];
+const FP=[40,8,48,16,56,24,64,32,39,7,47,15,55,23,63,31,38,6,46,14,54,22,62,30,
+37,5,45,13,53,21,61,29,36,4,44,12,52,20,60,28,35,3,43,11,51,19,59,27,
+34,2,42,10,50,18,58,26,33,1,41,9,49,17,57,25];
+const EE=[32,1,2,3,4,5,4,5,6,7,8,9,8,9,10,11,12,13,12,13,14,15,16,17,
+16,17,18,19,20,21,20,21,22,23,24,25,24,25,26,27,28,29,28,29,30,31,32,1];
+const PP=[16,7,20,21,29,12,28,17,1,15,23,26,5,18,31,10,
+2,8,24,14,32,27,3,9,19,13,30,6,22,11,4,25];
+const PC1=[57,49,41,33,25,17,9,1,58,50,42,34,26,18,10,2,59,51,43,35,27,19,11,3,
+60,52,44,36,63,55,47,39,31,23,15,7,62,54,46,38,30,22,14,6,
+61,53,45,37,29,21,13,5,28,20,12,4];
+const PC2=[14,17,11,24,1,5,3,28,15,6,21,10,23,19,12,4,26,8,16,7,27,20,13,2,
+41,52,31,37,47,55,30,40,51,45,33,48,44,49,39,56,34,53,46,42,50,36,29,32];
+const SH=[1,1,2,2,2,2,2,2,1,2,2,2,2,2,2,1];
+
+const SB=[
+[14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7,0,15,7,4,14,2,13,1,10,6,12,11,9,5,3,8,
+4,1,14,8,13,6,2,11,15,12,9,7,3,10,5,0,15,12,8,2,4,9,1,7,5,11,3,14,10,0,6,13],
+[15,1,8,14,6,11,3,4,9,7,2,13,12,0,5,10,3,13,4,7,15,2,8,14,12,0,1,10,6,9,11,5,
+0,14,7,11,10,4,13,1,5,8,12,6,9,3,2,15,13,8,10,1,3,15,4,2,11,6,7,12,0,5,14,9],
+[10,0,9,14,6,3,15,5,1,13,12,7,11,4,2,8,13,7,0,9,3,4,6,10,2,8,5,14,12,11,15,1,
+13,6,4,9,8,15,3,0,11,1,2,12,5,10,14,7,1,10,13,0,6,9,8,7,4,15,14,3,11,5,2,12],
+[7,13,14,3,0,6,9,10,1,2,8,5,11,12,4,15,13,8,11,5,6,15,0,3,4,7,2,12,1,10,14,9,
+10,6,9,0,12,11,7,13,15,1,3,14,5,2,8,4,3,15,0,6,10,1,13,8,9,4,5,11,12,7,2,14],
+[2,12,4,1,7,10,11,6,8,5,3,15,13,0,14,9,14,11,2,12,4,7,13,1,5,0,15,10,3,9,8,6,
+4,2,1,11,10,13,7,8,15,9,12,5,6,3,0,14,11,8,12,7,1,14,2,13,6,15,0,9,10,4,5,3],
+[12,1,10,15,9,2,6,8,0,13,3,4,14,7,5,11,10,15,4,2,7,12,9,5,6,1,13,14,0,11,3,8,
+9,14,15,5,2,8,12,3,7,0,4,10,1,13,11,6,4,3,2,12,9,5,15,10,11,14,1,7,6,0,8,13],
+[4,11,2,14,15,0,8,13,3,12,9,7,5,10,6,1,13,0,11,7,4,9,1,10,14,3,5,12,2,15,8,6,
+1,4,11,13,12,3,7,14,10,15,6,8,0,5,9,2,6,11,13,8,1,4,10,7,9,5,0,15,14,2,3,12],
+[13,2,8,4,6,15,11,1,10,9,3,14,5,0,12,7,1,15,13,8,10,3,7,4,12,5,6,11,0,14,9,2,
+7,11,4,1,9,12,14,2,0,6,10,13,15,3,5,8,2,1,14,7,4,10,8,13,15,12,9,0,3,5,6,11]];
+
+function prm(v,t,n){
+let o=0n;const l=t.length;
+for(let i=0;i<l;i++){const b=(v>>BigInt(n-t[i]))&1n;
+if(b)o|=(1n<<BigInt(l-1-i));}return o;}
+
+function skeys(k8){
+let k=0n;for(let i=0;i<8;i++)k=(k<<8n)|BigInt(k8[i]);
+let cd=prm(k,PC1,64);
+let C=cd>>28n,D=cd&0xFFFFFFFn;
+const sk=[];
+for(let r=0;r<16;r++){
+for(let s=0;s<SH[r];s++){
+C=((C<<1n)|(C>>27n))&0xFFFFFFFn;
+D=((D<<1n)|(D>>27n))&0xFFFFFFFn;}
+sk.push(prm((C<<28n)|D,PC2,56));}
+return sk;}
+
+function ff(R,sk){
+let exp=prm(BigInt(R>>>0),EE,32)^sk;
+let out=0n;
+for(let i=0;i<8;i++){
+const b6=Number((exp>>BigInt(42-i*6))&0x3Fn);
+const row=((b6&0x20)>>4)|(b6&1),col=(b6>>1)&0xF;
+out|=BigInt(SB[i][row*16+col])<<BigInt(28-i*4);}
+return Number(prm(out,PP,32)&0xFFFFFFFFn);}
+
+function desBlk(k8,b8,dec){
+const sk=skeys(k8);
+let v=0n;for(let i=0;i<8;i++)v=(v<<8n)|BigInt(b8[i]);
+v=prm(v,IP,64);
+let L=Number((v>>32n)&0xFFFFFFFFn),R=Number(v&0xFFFFFFFFn);
+for(let i=0;i<16;i++){const t=R;
+R=(L^ff(R,dec?sk[15-i]:sk[i]))>>>0;L=t;}
+const fp=prm((BigInt(R>>>0)<<32n)|BigInt(L>>>0),FP,64);
+const r=new Uint8Array(8);
+for(let i=0;i<8;i++)r[i]=Number((fp>>BigInt(56-i*8))&0xFFn);
+return r;}
+
+return{e:(k,b)=>desBlk(k,b,false),d:(k,b)=>desBlk(k,b,true)};
+})();
+
+function tdesD(k24,data){
+const k1=k24.slice(0,8),k2=k24.slice(8,16),k3=k24.slice(16,24);
+const out=new Uint8Array(data.length);
+for(let i=0;i<data.length;i+=8){
+let b=data.slice(i,i+8);
+b=DES.d(k3,b);b=DES.e(k2,b);b=DES.d(k1,b);out.set(b,i);}
+return out;}
+
+function rot8(buf,left){
+const b=new Uint8Array(buf);
+if(left){let t1=b[7];for(let k=0;k<8;k++){const t2=t1;t1=b[k];b[k]=((b[k]<<1)|(t2>>7))&0xFF;}}
+else{let t1=b[0];for(let k=7;k>=0;k--){const t2=t1;t1=b[k];b[k]=((b[k]>>1)|(t2<<7))&0xFF;}}
+return b;}
+
+function tvKT(key8,enc){
+const key=new Uint8Array(key8);
+let bk=new Uint8Array([0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88]);
+if(enc){
+for(let i=0;i<8;i++)bk=rot8(bk,true);
+for(let i1=7;i1>=0;i1--){
+bk=rot8(bk,false);
+for(let i2=7;i2>=0;i2--){
+const ok7=key[6];
+const t1=CT[ok7^bk[i2]^i1];
+const s=[...key.slice(0,6)];
+key[0]=key[7]^t1;
+for(let j=1;j<7;j++)key[j]=s[j-1];
+key[6]^=t1;key[7]=ok7;
+}}
+}else{
+for(let i1=0;i1<8;i1++){
+for(let i2=0;i2<8;i2++){
+const t1=CT[key[7]^bk[i2]^i1],t2=key[0];
+for(let j=0;j<6;j++)key[j]=key[j+1];
+key[5]^=t1;key[6]=key[7];key[7]=t1^t2;}
+bk=rot8(bk,true);}}
+return key;}
+
+function h2b(h){const b=new Uint8Array(h.length/2);
+for(let i=0;i<b.length;i++)b[i]=parseInt(h.slice(i*2,i*2+2),16);return b;}
+function b2h(b){return Array.from(b).map(x=>x.toString(16).padStart(2,'0')).join('').toUpperCase();}
+
+function convKey(hex,to4){
+const kb=h2b(hex),res=new Uint8Array(kb.length);
+for(let i=0;i<kb.length;i+=8)res.set(tvKT(kb.slice(i,i+8),to4),i);
+return b2h(res);}
+
+function decEcm(ecmH,keyH){
+ecmH=ecmH.replace(/[\s]/g,'');
+if(ecmH.length!==110)return{err:'ECM must be 110 hex chars (got '+ecmH.length+')'};
+const hdr=ecmH.slice(0,2).toUpperCase();
+if(hdr!=='80'&&hdr!=='81')return{err:'Invalid ECM header (expected 80 or 81, got '+hdr+')'};
+const par=parseInt(hdr,16);
+const ed=h2b(ecmH.slice(14)),kr=h2b(keyH);
+if(ed.length!==48)return{err:'ECM payload must be 48 bytes, got '+ed.length};
+if(kr.length!==32)return{err:'Key must be 32 bytes, got '+kr.length};
+const kd=new Uint8Array(32);
+for(let i=0;i<32;i+=8)kd.set(tvKT(kr.slice(i,i+8),false),i);
+const off=par===0x81?16:0;
+const dk=new Uint8Array(24);
+dk.set(kd.slice(off,off+16));dk.set(kd.slice(off,off+8),16);
+const dec=tdesD(dk,ed);
+let sum=0;for(let i=0;i<47;i++)sum=(sum+dec[i])&0xFF;
+const ts=((dec[0]<<24)|(dec[1]<<16)|(dec[2]<<8)|dec[3])>>>0;
+const ac=((dec[20]<<24)|(dec[21]<<16)|(dec[22]<<8)|dec[23])>>>0;
+const cw=new Uint8Array(16);cw.set(dec.slice(12,20));cw.set(dec.slice(4,12),8);
+const d=new Date(ts*1000);
+const ts2=d.getUTCFullYear()+'-'+
+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+
+String(d.getUTCDate()).padStart(2,'0')+' '+
+String(d.getUTCHours()).padStart(2,'0')+':'+
+String(d.getUTCMinutes()).padStart(2,'0')+':'+
+String(d.getUTCSeconds()).padStart(2,'0')+' UTC';
+return{csC:sum,csS:dec[47],csOk:sum===dec[47],par:hdr,
+ts:ts2,ac:ac.toString(16).toUpperCase().padStart(8,'0'),cw:b2h(cw)};}
+
+function tvSave(){
+const v=document.querySelector('input[name=ecm_v]:checked').value;
+sessionStorage.setItem('tv_ecm',document.getElementById('ecm_in').value);
+sessionStorage.setItem('tv_k3',document.getElementById('k3in').value);
+sessionStorage.setItem('tv_k4',document.getElementById('k4in').value);
+sessionStorage.setItem('tv_ecmv',v);
+sessionStorage.setItem('tv_cvk',document.getElementById('cv_in').value);
+const d=document.querySelector('input[name=cv_d]:checked');
+if(d)sessionStorage.setItem('tv_cvd',d.value);
+const tabs=document.querySelectorAll('.tv-tab');
+for(let i=0;i<tabs.length;i++)if(tabs[i].classList.contains('active')){sessionStorage.setItem('tv_tab',i);break;}}
+
+function tvLoad(){
+const ecm=sessionStorage.getItem('tv_ecm');
+const k3=sessionStorage.getItem('tv_k3');
+const k4=sessionStorage.getItem('tv_k4');
+const ev=sessionStorage.getItem('tv_ecmv');
+const cvk=sessionStorage.getItem('tv_cvk');
+const cvd=sessionStorage.getItem('tv_cvd');
+const tab=parseInt(sessionStorage.getItem('tv_tab')||'0');
+if(ecm)document.getElementById('ecm_in').value=ecm;
+if(k3)document.getElementById('k3in').value=k3;
+if(k4)document.getElementById('k4in').value=k4;
+if(ev){const r=document.querySelector('input[name=ecm_v][value="'+ev+'"]');if(r)r.checked=true;}
+if(cvk)document.getElementById('cv_in').value=cvk;
+if(cvd){const r=document.querySelector('input[name=cv_d][value="'+cvd+'"]');if(r)r.checked=true;}
+tvVC();tvDC();if(tab)tvTab(tab);}
+
+function tvTab(n){
+document.querySelectorAll('.tv-tab').forEach((t,i)=>t.classList.toggle('active',i===n));
+document.querySelectorAll('.tv-panel').forEach((p,i)=>p.classList.toggle('active',i===n));
+sessionStorage.setItem('tv_tab',n);}
+
+function tvVC(){
+const v=document.querySelector('input[name=ecm_v]:checked').value;
+document.getElementById('k3r').style.display=v==='3'?'':'none';
+document.getElementById('k4r').style.display=v==='4'?'':'none';
+tvSave();}
+
+function tvDC(){
+const d=document.querySelector('input[name=cv_d]:checked').value;
+document.getElementById('cv_il').textContent=d==='3to4'?
+'TVCAS3 Key — 32 or 64 hex chars':'TVCAS4 Key — 64 hex chars';
+document.getElementById('cv_ol').textContent=d==='3to4'?'TVCAS4 Key':'TVCAS3 Key';
+tvSave();}
+
+function sr(id,html){document.getElementById(id).innerHTML=html;}
+function row(k,v){return '<tr><td class=tk>'+k+'</td><td class=tv>'+v+'</td></tr>';}
+
+function tvDec(){
+tvSave();
+try{
+const ecm=document.getElementById('ecm_in').value.trim().replace(/[\s]+/g,'');
+if(!ecm)return sr('ecm_res','<div class=tv-res-empty><span class=tv-er>Missing ECM</span></div>');
+if(ecm.length!==110)
+return sr('ecm_res','<div class=tv-res-empty><span class=tv-er>ECM must be 110 hex chars (got '+ecm.length+')</span></div>');
+const ver=document.querySelector('input[name=ecm_v]:checked').value;
+let k4;
+if(ver==='3'){
+const k3=document.getElementById('k3in').value.trim().replace(/[\s]+/g,'');
+if(!k3)return sr('ecm_res','<div class=tv-res-empty><span class=tv-er>Missing TVCAS3 Key</span></div>');
+if(k3.length!==32&&k3.length!==64)
+return sr('ecm_res','<div class=tv-res-empty><span class=tv-er>Key must be 32 or 64 hex chars</span></div>');
+k4=convKey(k3,true);
+}else{
+k4=document.getElementById('k4in').value.trim().replace(/[\s]+/g,'');
+if(!k4)return sr('ecm_res','<div class=tv-res-empty><span class=tv-er>Missing TVCAS4 Key</span></div>');
+if(k4.length!==64)
+return sr('ecm_res','<div class=tv-res-empty><span class=tv-er>Key must be 64 hex chars</span></div>');}
+const r=decEcm(ecm,k4);
+if(r.err)return sr('ecm_res','<div class=tv-res-empty><span class=tv-er>'+r.err+'</span></div>');
+const csC=r.csC.toString(16).toUpperCase().padStart(2,'0');
+const csS=r.csS.toString(16).toUpperCase().padStart(2,'0');
+const ok=r.csOk?'<span class=tv-ok>✓ Valid</span>':'<span class=tv-er>✗ Mismatch</span>';
+const cc=r.csOk?'tv-ok':'tv-er';
+sr('ecm_res',
+'<div class=tv-split>'
++'<div class=tv-split-box>'
++'<div class=tv-split-hdr>Checksum</div>'
++'<table class=tv-tbl>'
++row('Calculated','<span class='+cc+'>'+csC+'</span>')
++row('Stored','<span class='+cc+'>'+csS+'</span>')
++row('Valid',ok)
++'</table></div>'
++'<div class=tv-split-box>'
++'<div class=tv-split-hdr>Output</div>'
++'<table class=tv-tbl>'
++row('Timestamp','<span class=tv-ts>'+r.ts+'</span>')
++row('Access','<span class=tv-hi>'+r.ac+'</span>')
++row('CW','<span class=tv-cw>'+r.cw+'</span>')
++'</table></div>'
++'</div>'
+);
+}catch(e){sr('ecm_res','<div class=tv-res-empty><span class=tv-er>'+e.message+'</span></div>');}}
+
+function tvConv(){
+tvSave();
+try{
+const k=document.getElementById('cv_in').value.trim().replace(/[\s]+/g,'');
+if(!k)return sr('cv_res','<div class=tv-res-empty><span class=tv-er>Missing key</span></div>');
+if(k.length!==32&&k.length!==64)
+return sr('cv_res','<div class=tv-res-empty><span class=tv-er>Invalid length (32 or 64 hex chars)</span></div>');
+const d=document.querySelector('input[name=cv_d]:checked').value;
+const lbl=d==='3to4'?'TVCAS4 Key':'TVCAS3 Key';
+sr('cv_res',
+'<div class=tv-split-hdr>'+lbl+'</div>'
++'<table class=tv-tbl>'
++row('Key','<span class=tv-cw>'+convKey(k,d==='3to4')+'</span>')
++'</table>'
+);
+}catch(e){sr('cv_res','<div class=tv-res-empty><span class=tv-er>'+e.message+'</span></div>');}}
+
+['ecm_in','k3in','k4in','cv_in'].forEach(id=>{
+const el=document.getElementById(id);
+if(el)el.addEventListener('input',tvSave);});
+
+document.addEventListener('DOMContentLoaded',tvLoad);
+</script>
+</body>
+</html>
