@@ -5,89 +5,107 @@
 <title>TVCAS Tool</title>
 <style>
 :root{
---s1:#1a1d24;--s2:#20242c;--s3:#262b34;--s4:#2c323c;
---bd:#33393f;--bd2:#3d434b;
---t0:#e8eaed;--t1:#a9afb8;--t2:#7a828d;
---p:#5b7fff;--p2:#4a6ee0;--pg:#5b7fff55;--ps:#5b7fff33;
---gr:#3ecf8e;--re:#ef5f5f;--cy:#4fd1e8;
---r:10px;--rsm:7px;--rxs:5px;
+--s1:#14161b;--s2:#1a1d24;--s3:#20242c;--s4:#262a33;
+--bd:#2a2e37;--bd2:#363b44;
+--t0:#e6e8ec;--t1:#9aa1ac;--t2:#666d78;
+--p:#7592f7;--p2:#6280e8;--pg:#7592f755;--ps:#7592f726;
+--gr:#3ecf8e;--re:#ef5354;--cy:#4fb8e0;--gd:#e8b45a;
+--r:12px;--rsm:8px;--rxs:6px;
 --sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
 --mono:'JetBrains Mono',Consolas,monospace;
 --ease:cubic-bezier(.22,1,.36,1);
 }
-body{background:var(--s1);color:var(--t0);font-family:var(--sans);margin:0;padding:24px}
-@keyframes fu{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+*{box-sizing:border-box}
+html{font-size:15px}
+body{background:var(--s1);color:var(--t0);font-family:var(--sans);margin:0;padding:32px 20px;min-height:100vh}
+@keyframes fu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 
-.tv-tabs{display:flex;gap:2px;margin-bottom:20px;
+.tv-tabs{display:flex;gap:4px;margin-bottom:20px;
 background:var(--s2);border:1px solid var(--bd);
-border-radius:var(--rsm);padding:4px}
-.tv-tab{flex:1;padding:8px 16px;cursor:pointer;font-size:12.5px;
-font-weight:600;font-family:var(--sans);letter-spacing:.03em;
-color:var(--t1);border-radius:var(--rxs);border:1px solid transparent;
+border-radius:var(--r);padding:5px}
+.tv-tab{flex:1;padding:10px 18px;cursor:pointer;font-size:13.5px;
+font-weight:600;font-family:var(--sans);letter-spacing:.02em;
+color:var(--t1);border-radius:var(--rsm);border:1px solid transparent;
 background:none;transition:all .18s}
 .tv-tab.active{background:var(--s4);color:var(--p);border-color:var(--pg)}
 .tv-tab:hover:not(.active){color:var(--t0);background:var(--s3)}
 .tv-panel{display:none}.tv-panel.active{display:block}
 
 .tv-card{background:var(--s1);border:1px solid var(--bd);
-border-radius:var(--r);padding:18px 20px;margin-bottom:14px;
+border-radius:var(--r);padding:22px 24px;margin-bottom:16px;
 animation:fu .3s var(--ease) both}
 
-.tv-lbl{font-size:10px;font-weight:700;text-transform:uppercase;
-letter-spacing:.10em;color:var(--t1);margin-bottom:5px;margin-top:12px}
+.tv-lbl{font-size:11px;font-weight:700;text-transform:uppercase;
+letter-spacing:.08em;color:var(--t1);margin-bottom:10px;margin-top:20px}
 .tv-lbl:first-child{margin-top:0}
+#k3r,#k4r{margin-top:20px}
+#k3r .tv-lbl,#k4r .tv-lbl{margin-top:0}
 
 .tv-inp{width:100%;background:var(--s2);border:1px solid var(--bd2);
 border-radius:var(--rsm);color:var(--t0);font-family:var(--mono);
-font-size:12.5px;padding:8px 12px;outline:none;
-transition:border-color .18s;box-sizing:border-box}
-.tv-inp:focus{border-color:var(--pg);box-shadow:0 0 0 3px var(--ps)}
-textarea.tv-inp{resize:vertical;min-height:56px;line-height:1.6}
+font-size:13.5px;padding:10px 13px;outline:none;
+transition:border-color .18s,box-shadow .18s;box-sizing:border-box}
+.tv-inp:focus{border-color:var(--p);box-shadow:0 0 0 3px var(--ps)}
+textarea.tv-inp{resize:vertical;min-height:64px;line-height:1.6}
+.tv-hint{font-size:11px;color:var(--t2);margin-top:5px}
 
-.tv-btn{display:inline-flex;align-items:center;gap:6px;
+.tv-btn{display:inline-flex;align-items:center;gap:8px;
 background:var(--p);border:none;border-radius:var(--rsm);color:#fff;
-font-family:var(--sans);font-size:13px;font-weight:600;
-padding:9px 22px;cursor:pointer;margin-top:12px;
-transition:background .18s,box-shadow .18s;letter-spacing:.02em}
+font-family:var(--sans);font-size:13.5px;font-weight:600;
+padding:11px 26px;cursor:pointer;margin-top:18px;
+transition:background .18s,box-shadow .18s;letter-spacing:.01em}
 .tv-btn:hover{background:var(--p2);box-shadow:0 0 0 3px var(--pg)}
+.tv-btn svg{width:15px;height:15px}
 
 .tv-res{background:var(--s2);border:1px solid var(--bd);
-border-radius:var(--rsm);overflow:hidden;min-height:48px}
-.tv-res-empty{padding:14px 16px;font-size:12px;color:var(--t2);
+border-radius:var(--rsm);overflow:hidden;min-height:52px}
+.tv-res-empty{padding:16px 18px;font-size:13px;color:var(--t2);
 font-family:var(--mono)}
 
 .tv-tbl{width:100%;border-collapse:collapse}
 .tv-tbl tr{border-bottom:1px solid var(--bd)}
 .tv-tbl tr:last-child{border-bottom:none}
-.tv-tbl td{padding:9px 14px;font-family:var(--mono);font-size:12.5px;
+.tv-tbl td{padding:10px 15px;font-family:var(--mono);font-size:13px;
 vertical-align:middle}
-.tv-tbl td.tk{color:var(--t2);font-size:10px;font-weight:700;
-text-transform:uppercase;letter-spacing:.10em;white-space:nowrap;
-width:110px;border-right:1px solid var(--bd);background:var(--s1)}
-.tv-tbl td.tv{color:var(--t0);padding-left:16px;word-break:break-all}
+.tv-tbl td.tk{color:var(--t2);font-size:10.5px;font-weight:700;
+text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;
+width:120px;border-right:1px solid var(--bd);background:var(--s1)}
+.tv-tbl td.tv{color:var(--t0);padding-left:18px;word-break:break-all}
 
-.tv-split{display:flex;gap:0;border-bottom:1px solid var(--bd)}
-.tv-split-box{flex:1;border-right:1px solid var(--bd)}
+.tv-split{display:flex;gap:0;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.tv-split-box{flex:1;min-width:240px;border-right:1px solid var(--bd)}
 .tv-split-box:last-child{border-right:none}
-.tv-split-hdr{font-size:9px;font-weight:700;letter-spacing:.14em;
+.tv-split-hdr{font-size:10px;font-weight:700;letter-spacing:.12em;
 text-transform:uppercase;color:var(--p);background:var(--s1);
-padding:6px 14px;border-bottom:1px solid var(--bd)}
+padding:8px 15px;border-bottom:1px solid var(--bd)}
 
-.tv-rgrp{display:flex;align-items:center;gap:14px;margin-bottom:12px;
+.tv-rgrp{display:flex;align-items:center;gap:18px;margin-bottom:16px;
 flex-wrap:wrap}
-.tv-rgrp label{display:flex;align-items:center;gap:6px;
-cursor:pointer;font-size:13px;font-weight:500;color:var(--t0)}
-.tv-rgrp span{font-size:10px;font-weight:700;letter-spacing:.10em;
+.tv-rgrp label{display:flex;align-items:center;gap:7px;
+cursor:pointer;font-size:13.5px;font-weight:500;color:var(--t0)}
+.tv-rgrp input[type=radio]{width:14px;height:14px;accent-color:var(--p)}
+.tv-rgrp span{font-size:10.5px;font-weight:700;letter-spacing:.08em;
 text-transform:uppercase;color:var(--t2)}
 
-.tv-ok{color:var(--gr)}
-.tv-er{color:var(--re)}
-.tv-hi{color:var(--cy)}
-.tv-cw{font-family:var(--mono);font-size:13px;font-weight:700;
-color:var(--cy);letter-spacing:.4px;word-break:break-all}
+.tv-ok{color:var(--gr);font-weight:700}
+.tv-er{color:var(--re);font-weight:700}
+.tv-hi{color:var(--cy);font-weight:600}
+.tv-cw{font-family:var(--mono);font-size:14px;font-weight:700;
+color:var(--gd);letter-spacing:.4px;word-break:break-all}
 .tv-ts{color:var(--t0)}
 .tv-dim{color:var(--t2)}
 .tv-wrap{max-width:760px;margin:0 auto}
+
+.tv-tbl tr.tv-row-ok{background:linear-gradient(90deg,#3ecf8e14,transparent 60%)}
+.tv-tbl tr.tv-row-er{background:linear-gradient(90deg,#ef535414,transparent 60%)}
+.tv-tbl tr.tv-row-cw{background:linear-gradient(90deg,#e8b45a1c,transparent 70%)}
+.tv-tbl tr.tv-row-cw td.tk{color:var(--gd)}
+
+@media (max-width:640px){
+body{padding:18px 12px}
+.tv-card{padding:18px 16px}
+.tv-tab{padding:9px 12px;font-size:12.5px}
+}
 </style>
 </head>
 <body>
@@ -121,7 +139,7 @@ color:var(--cy);letter-spacing:.4px;word-break:break-all}
 <input id="k3in" class="tv-inp" type="text" placeholder="TVCAS3 key hex...">
 </div>
 <div id="k4r">
-<div class="tv-lbl">TVCAS4 Key — 64 hex chars</div>
+<div class="tv-lbl">TVCAS4 Key — 32 or 64 hex chars</div>
 <input id="k4in" class="tv-inp" type="text" placeholder="TVCAS4 key hex...">
 </div>
 <button class="tv-btn" onclick="tvDec()">
@@ -310,9 +328,11 @@ if(ecmH.length!==110)return{err:'ECM must be 110 hex chars (got '+ecmH.length+')
 const hdr=ecmH.slice(0,2).toUpperCase();
 if(hdr!=='80'&&hdr!=='81')return{err:'Invalid ECM header (expected 80 or 81, got '+hdr+')'};
 const par=parseInt(hdr,16);
-const ed=h2b(ecmH.slice(14)),kr=h2b(keyH);
+const ed=h2b(ecmH.slice(14));
+let kr=h2b(keyH);
 if(ed.length!==48)return{err:'ECM payload must be 48 bytes, got '+ed.length};
-if(kr.length!==32)return{err:'Key must be 32 bytes, got '+kr.length};
+if(kr.length!==16&&kr.length!==32)return{err:'Key must be 16 or 32 bytes, got '+kr.length};
+if(kr.length===16){const kr2=new Uint8Array(32);kr2.set(kr,0);kr2.set(kr,16);kr=kr2;}
 const kd=new Uint8Array(32);
 for(let i=0;i<32;i+=8)kd.set(tvKT(kr.slice(i,i+8),false),i);
 const off=par===0x81?16:0;
@@ -375,12 +395,12 @@ tvSave();}
 function tvDC(){
 const d=document.querySelector('input[name=cv_d]:checked').value;
 document.getElementById('cv_il').textContent=d==='3to4'?
-'TVCAS3 Key — 32 or 64 hex chars':'TVCAS4 Key — 64 hex chars';
+'TVCAS3 Key — 32 or 64 hex chars':'TVCAS4 Key — 32 or 64 hex chars';
 document.getElementById('cv_ol').textContent=d==='3to4'?'TVCAS4 Key':'TVCAS3 Key';
 tvSave();}
 
 function sr(id,html){document.getElementById(id).innerHTML=html;}
-function row(k,v){return '<tr><td class=tk>'+k+'</td><td class=tv>'+v+'</td></tr>';}
+function row(k,v,cls){return '<tr'+(cls?' class='+cls:'')+'><td class=tk>'+k+'</td><td class=tv>'+v+'</td></tr>';}
 
 function tvDec(){
 tvSave();
@@ -400,8 +420,8 @@ k4=convKey(k3,true);
 }else{
 k4=document.getElementById('k4in').value.trim().replace(/[\s]+/g,'');
 if(!k4)return sr('ecm_res','<div class=tv-res-empty><span class=tv-er>Missing TVCAS4 Key</span></div>');
-if(k4.length!==64)
-return sr('ecm_res','<div class=tv-res-empty><span class=tv-er>Key must be 64 hex chars</span></div>');}
+if(k4.length!==32&&k4.length!==64)
+return sr('ecm_res','<div class=tv-res-empty><span class=tv-er>Key must be 32 or 64 hex chars</span></div>');}
 const r=decEcm(ecm,k4);
 if(r.err)return sr('ecm_res','<div class=tv-res-empty><span class=tv-er>'+r.err+'</span></div>');
 const csC=r.csC.toString(16).toUpperCase().padStart(2,'0');
@@ -415,14 +435,14 @@ sr('ecm_res',
 +'<table class=tv-tbl>'
 +row('Calculated','<span class='+cc+'>'+csC+'</span>')
 +row('Stored','<span class='+cc+'>'+csS+'</span>')
-+row('Valid',ok)
++row('Valid',ok,r.csOk?'tv-row-ok':'tv-row-er')
 +'</table></div>'
 +'<div class=tv-split-box>'
 +'<div class=tv-split-hdr>Output</div>'
 +'<table class=tv-tbl>'
 +row('Timestamp','<span class=tv-ts>'+r.ts+'</span>')
 +row('Access','<span class=tv-hi>'+r.ac+'</span>')
-+row('CW','<span class=tv-cw>'+r.cw+'</span>')
++row('CW','<span class=tv-cw>'+r.cw+'</span>','tv-row-cw')
 +'</table></div>'
 +'</div>'
 );
@@ -440,7 +460,7 @@ const lbl=d==='3to4'?'TVCAS4 Key':'TVCAS3 Key';
 sr('cv_res',
 '<div class=tv-split-hdr>'+lbl+'</div>'
 +'<table class=tv-tbl>'
-+row('Key','<span class=tv-cw>'+convKey(k,d==='3to4')+'</span>')
++row('Key','<span class=tv-cw>'+convKey(k,d==='3to4')+'</span>','tv-row-cw')
 +'</table>'
 );
 }catch(e){sr('cv_res','<div class=tv-res-empty><span class=tv-er>'+e.message+'</span></div>');}}
