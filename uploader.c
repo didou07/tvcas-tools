@@ -1,24 +1,8 @@
 /*
- * Build (Linux):   gcc -O2 -Wall -o uploader_x64 uploader.c
- * Build (Windows): gcc -O2 -Wall -o uploader_x64.exe uploader.c
- *                  (MinGW-w64, or MSVC's cl.exe with minor flag changes)
- * Usage:   uploader_x64 [-d] [port] ([configfile]) [diagnostic flags]
- *          Linux:   uploader_x64 -d /dev/ttyUSB0 config.bin
- *          Windows: uploader_x64 -d 3 config.bin       (-> \\.\COM3)
- *   -d               enable debug output: every low-level serial call,
- *                    hex dumps of data written and read, and every sleep
- *                    duration are logged to stderr.
- *   --stopbits 1|2   override stop bits (default 2, verified)
- *   --parity n|e|o   override parity (default e, verified)
- *   --invert-rts     flip which RTS level asserts card reset
- *   --atr-delay MS   power-up delay before reading ATR (default 50ms)
- * The four diagnostic flags are this port's own addition (not part of
- * the original tool) for debugging USB-serial/ISO7816 bridge boards
- * (e.g. CH340-based "Phoenix" clones) whose exact electrical framing or
- * reset polarity may differ from the reference hardware this was
- * verified against.
- */
-
+Build (Linux):   gcc -O2 -Wall -o uploader uploader.c
+Build (Windows): x86_64-w64-mingw32-gcc -O2 -Wall -o uploader.exe uploader.c
+*/
+ 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,12 +10,12 @@
 #include <stdint.h>
 
 #ifdef _WIN32
-  #include <windows.h>
+#include <windows.h>
 #else
-  #include <unistd.h>
-  #include <fcntl.h>
-  #include <termios.h>
-  #include <sys/ioctl.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <sys/ioctl.h>
 #endif
 
 #define NCHUNKS 73
@@ -540,54 +524,7 @@ static const int CHUNK_DELAYS_MS[NCHUNKS] = {
     -1, -1, 3, 3, 60, 3, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 60, 3, 3, 60, 3, 60, 3, 60, 3, 60
 };
 
-
-/* ---- debug helpers ------------------------------------------------- */
 static int g_debug = 0;
-static int g_stopbits = 2;     /* --stopbits 1|2, default matches verified real binary */
-static char g_parity = 'e';    /* --parity n|e|o, default matches verified real binary */
-static int g_invert_rts = 0;   /* --invert-rts: swap which RTS level asserts reset,
-                                 * for boards whose reset-line polarity is flipped
-                                 * relative to the reference hardware */
-static int g_atr_delay_ms = 50; /* --atr-delay MS: power-up settle time before
-                                  * reading the ATR, tunable in case a given board
-                                  * needs longer than the verified 50ms */
-static int g_auto = 1;          /* auto framing-detection, on by default;
-                                  * --no-auto disables it and uses only the
-                                  * verified defaults (or whatever --stopbits/
-                                  * --parity/--invert-rts were passed) */
-static int g_custom_baud = 0;
-static void color_red(void)   {
-#ifdef _WIN32
-    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (h != INVALID_HANDLE_VALUE) SetConsoleTextAttribute(h, FOREGROUND_RED | FOREGROUND_INTENSITY);
-#else
-    printf("\033[31m");
-#endif
-}
-static void color_green(void) {
-#ifdef _WIN32
-    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (h != INVALID_HANDLE_VALUE) SetConsoleTextAttribute(h, FOREGROUND_GREEN | FOREGROUND_INTENSITY);
-#else
-    printf("\033[32m");
-#endif
-}
-static void color_yellow(void) {
-#ifdef _WIN32
-    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (h != INVALID_HANDLE_VALUE) SetConsoleTextAttribute(h, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
-#else
-    printf("\033[33m");
-#endif
-}
-static void color_reset(void) {
-#ifdef _WIN32
-    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (h != INVALID_HANDLE_VALUE) SetConsoleTextAttribute(h, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-#else
-    printf("\033[0m");
-#endif
-}
 
 #define DBG(...) do { if (g_debug) { fprintf(stderr, "[DEBUG] " __VA_ARGS__); } } while (0)
 
@@ -613,7 +550,6 @@ static void dbg_sleep_ms(int ms)
 static unsigned char rx[128];
 
 #ifdef _WIN32
-/* =======================  WINDOWS BACKEND  ============================ */
 
 static HANDLE hport = INVALID_HANDLE_VALUE;
 
@@ -625,19 +561,14 @@ static void configure_port(DWORD baud)
     if (!GetCommState(hport, &dcb)) {
         DBG("GetCommState failed: %lu\n", GetLastError());
     }
-    dcb.BaudRate = (g_custom_baud > 0 && baud == BAUD_HANDSHAKE) ? (DWORD)g_custom_baud : baud;
+    dcb.BaudRate = baud;
     dcb.ByteSize = 8;
-    switch (g_parity) {
-        case 'e': dcb.Parity = EVENPARITY; break;
-        case 'o': dcb.Parity = ODDPARITY; break;
-        default:  dcb.Parity = NOPARITY; break;
-    }
-    dcb.StopBits = (g_stopbits == 2) ? TWOSTOPBITS : ONESTOPBIT;
+    dcb.Parity = EVENPARITY;
+    dcb.StopBits = TWOSTOPBITS;
     if (!SetCommState(hport, &dcb)) {
         DBG("SetCommState failed: %lu\n", GetLastError());
     }
-    DBG("port configured, baud=%lu (8%c%d)\n", baud,
-        (g_parity=='e'?'E':g_parity=='o'?'O':'N'), g_stopbits);
+    DBG("port configured, baud=%lu\n", baud);
 }
 
 static void open_port(const char *path)
@@ -645,9 +576,7 @@ static void open_port(const char *path)
     hport = CreateFileA(path, GENERIC_READ | GENERIC_WRITE, 0, NULL,
                          OPEN_EXISTING, 0, NULL);
     if (hport == INVALID_HANDLE_VALUE) {
-        color_red();
         printf("COM-port not availabel\n");
-        color_reset();
         DBG("CreateFileA(%s) failed: %lu\n", path, GetLastError());
         exit(1);
     }
@@ -669,15 +598,15 @@ static void reset_card(void)
     SecureZeroMemory(&dcb, sizeof(dcb));
     dcb.DCBlength = sizeof(dcb);
     GetCommState(hport, &dcb);
-    dcb.fRtsControl = g_invert_rts ? RTS_CONTROL_DISABLE : RTS_CONTROL_ENABLE;
+    dcb.fRtsControl = RTS_CONTROL_ENABLE;
     SetCommState(hport, &dcb);
-    DBG("RTS %s (assert)\n", g_invert_rts ? "low" : "high");
+    DBG("RTS high\n");
     dbg_sleep_ms(100);
 
     GetCommState(hport, &dcb);
-    dcb.fRtsControl = g_invert_rts ? RTS_CONTROL_ENABLE : RTS_CONTROL_DISABLE;
+    dcb.fRtsControl = RTS_CONTROL_DISABLE;
     SetCommState(hport, &dcb);
-    DBG("RTS %s (release)\n", g_invert_rts ? "high" : "low");
+    DBG("RTS low\n");
 }
 
 static int read_data(int n)
@@ -686,12 +615,12 @@ static int read_data(int n)
     for (int i = 0; i < n; i++) {
         DWORD got = 0;
         if (!ReadFile(hport, &rx[i], 1, &got, NULL)) {
-            fprintf(stderr, "ReadFile failed: %lu\n", GetLastError());
+            DBG("ReadFile failed: %lu\n", GetLastError());
             break;
         }
         total += (int)got;
     }
-    dbg_hexdump("ReadData() result", rx, n);
+    dbg_hexdump("ReadData", rx, n);
     return total;
 }
 
@@ -701,37 +630,32 @@ static void write_chunk(const unsigned char *data, int len)
     if (!WriteFile(hport, data, (DWORD)len, &written, NULL)) {
         DBG("WriteFile failed: %lu\n", GetLastError());
     }
-    dbg_hexdump("WriteFile()", data, len);
+    dbg_hexdump("write_chunk", data, len);
 }
 
 #define BAUD_HANDSHAKE 9600
-#define BAUD_UPLOAD    224000
+#define BAUD_UPLOAD 224000
 
 #else
-/* ========================  LINUX BACKEND  ============================= */
 
 static int fd = -1;
 
-/* ---- reset_card(): exact port of the traced ioctl/usleep sequence --- */
 static void reset_card(void)
 {
     int status = 0;
-
     if (ioctl(fd, TIOCMGET, &status) < 0) DBG("ioctl(TIOCMGET) failed: %s\n", strerror(errno));
-    DBG("ioctl(TIOCMGET) -> status=0x%x\n", status);
     status |= TIOCM_RTS;
     if (ioctl(fd, TIOCMSET, &status) < 0) DBG("ioctl(TIOCMSET) failed: %s\n", strerror(errno));
-    DBG("ioctl(TIOCMSET) RTS high, status=0x%x\n", status);
-    dbg_sleep_ms(50); /* usleep(50000) */
+    DBG("RTS high\n");
+    dbg_sleep_ms(50);
 
     if (ioctl(fd, TIOCMGET, &status) < 0) DBG("ioctl(TIOCMGET) failed: %s\n", strerror(errno));
     status &= ~TIOCM_RTS;
     if (ioctl(fd, TIOCMSET, &status) < 0) DBG("ioctl(TIOCMSET) failed: %s\n", strerror(errno));
-    DBG("ioctl(TIOCMSET) RTS low, status=0x%x\n", status);
-    usleep(100); /* 0x64 us - sub-millisecond, kept exact rather than rounded */
+    DBG("RTS low\n");
+    usleep(100);
 }
 
-/* ---- ReadData(n): exact port ----------------------------------------- */
 static int read_data(int n)
 {
     int ret = 0;
@@ -742,45 +666,10 @@ static int read_data(int n)
             break;
         }
     }
-    dbg_hexdump("ReadData() result", rx, n);
+    dbg_hexdump("ReadData", rx, n);
     return ret;
 }
 
-#ifndef BOTHER
-#define BOTHER 0010000
-#endif
-#ifndef TCGETS2
-#define TCGETS2 _IOR('T', 0x2A, struct uploader_termios2)
-#define TCSETS2 _IOW('T', 0x2B, struct uploader_termios2)
-struct uploader_termios2 {
-    tcflag_t c_iflag, c_oflag, c_cflag, c_lflag;
-    cc_t c_line;
-    cc_t c_cc[19];
-    speed_t c_ispeed, c_ospeed;
-};
-#else
-#define uploader_termios2 termios2
-#endif
-
-
-static void set_custom_baud(int baud)
-{
-    struct uploader_termios2 tio2;
-    if (ioctl(fd, TCGETS2, &tio2) < 0) {
-        DBG("TCGETS2 failed: %s\n", strerror(errno));
-        return;
-    }
-    tio2.c_cflag &= ~CBAUD;
-    tio2.c_cflag |= BOTHER;
-    tio2.c_ispeed = baud;
-    tio2.c_ospeed = baud;
-    if (ioctl(fd, TCSETS2, &tio2) < 0) {
-        DBG("TCSETS2 failed: %s\n", strerror(errno));
-    }
-    DBG("custom baud set: %d bps (via BOTHER)\n", baud);
-}
-
-/* ---- serial port helpers ---------------------------------------------- */
 static void configure_port(speed_t baud)
 {
     struct termios attrs;
@@ -789,49 +678,23 @@ static void configure_port(speed_t baud)
     }
     cfsetispeed(&attrs, baud);
     cfsetospeed(&attrs, baud);
-    attrs.c_cflag |= CS8;
-    if (g_stopbits == 2) attrs.c_cflag |= CSTOPB; else attrs.c_cflag &= ~CSTOPB;
-    switch (g_parity) {
-        case 'e': attrs.c_cflag |= PARENB; attrs.c_cflag &= ~PARODD; break;
-        case 'o': attrs.c_cflag |= PARENB; attrs.c_cflag |= PARODD; break;
-        default:  attrs.c_cflag &= ~PARENB; break; /* 'n' = none */
-    }
+    attrs.c_cflag |= PARENB | CSTOPB | CS8;
     attrs.c_lflag = 0;
     attrs.c_oflag &= ~OPOST;
     attrs.c_iflag &= ~(INLCR | IGNCR | ICRNL);
     attrs.c_cc[VTIME] = 5;
     attrs.c_cc[VMIN] = 0;
-
     if (tcsetattr(fd, TCSANOW, &attrs) < 0) {
         DBG("tcsetattr failed: %s\n", strerror(errno));
     }
-    if (g_custom_baud > 0 && baud == BAUD_HANDSHAKE) {
-        /* Only override the handshake-stage baud - the upload-stage baud
-         * switch stays at the verified B230400 regardless, since a wrong
-         * initial ATR baud doesn't imply the upload baud is also wrong. */
-        set_custom_baud(g_custom_baud);
-    }
-    DBG("port configured, baud constant=%d (8%c%d raw, VTIME=5 VMIN=0)\n",
-        (int)baud, (g_parity=='e'?'E':g_parity=='o'?'O':'N'), g_stopbits);
+    DBG("port configured, baud constant=%d\n", (int)baud);
 }
 
 static void open_port(const char *path)
 {
     fd = open(path, O_RDWR | O_NOCTTY);
     if (fd < 0) {
-        color_red();
         printf("open(%s) failed: %s\n", path, strerror(errno));
-        color_reset();
-        if (errno == ENOENT) {
-            printf("Hint: that device doesn't exist. Check the exact name with:\n");
-            printf("        ls /dev/ttyUSB* /dev/ttyACM* 2>/dev/null\n");
-            printf("      and that the adapter is plugged in (check with: lsusb / dmesg | tail)\n");
-        } else if (errno == EACCES) {
-            printf("Hint: permission denied. Try adding your user to the 'dialout'\n");
-            printf("      group (sudo usermod -aG dialout $USER, then log out/in), or\n");
-            printf("      run with sudo.\n");
-        }
-        fflush(stdout);
         exit(1);
     }
     DBG("open(%s) -> fd=%d\n", path, fd);
@@ -852,142 +715,71 @@ static void write_chunk(const unsigned char *data, int len)
     if (n < 0) {
         DBG("write() failed: %s\n", strerror(errno));
     }
-    dbg_hexdump("write()", data, len);
+    dbg_hexdump("write_chunk", data, len);
 }
 
 #define BAUD_HANDSHAKE B9600
-#define BAUD_UPLOAD    B230400
+#define BAUD_UPLOAD B230400
 
-#endif /* _WIN32 */
+#endif
 
-/* ---- optional 90-byte config file check (argv[2]) --------------------- */
+static void usage(void)
+{
+    printf("****************************************************************\n");
+    printf("*                 Free CAS - https://tvcas.com                 *\n");
+    printf("*            UPLOADER FOR SMARTCARDS THC20F17BD-V40            *\n");
+    printf("*               ver.1,053 of 09.12.2023 13:17:57               *\n");
+    printf("****************************************************************\n");
+    printf("Use:\n");
+    printf("        uploader_x64 [-d] [number COM] ([config])\n\n");
+    printf("Example:\n");
+    printf("        uploader_x64 3 .\\210-000-000-0.bin   - start upload fw\n");
+    printf("        uploader_x64 3                       - get ATR from COM3\n");
+}
+
 static void read_config_file(const char *path)
 {
     unsigned char buf[90];
     FILE *f = fopen(path, "rb");
     if (!f) {
-        color_red();
         printf("File not found!\n");
-        color_reset();
         exit(1);
     }
     size_t n = fread(buf, 1, sizeof(buf), f);
     fclose(f);
     if (n < 1 || buf[0] != 0x7d) {
-        color_red();
         printf("File incorrect!\n");
-        color_reset();
         exit(1);
     }
     DBG("config file '%s' passed 0x7D marker check (%zu bytes read)\n", path, n);
 }
 
-static int try_one_framing(const char *device_path, int baud, int stopbits, char parity, int invert_rts)
-{
-    g_custom_baud = baud;
-    g_stopbits = stopbits;
-    g_parity = parity;
-    g_invert_rts = invert_rts;
-
-    open_port(device_path);
-    configure_port(BAUD_HANDSHAKE);
-    reset_card();
-    read_data(1); /* only need the TS byte to validate a combo during scanning */
-    close_port();
-
-    return (rx[0] == 0x3B || rx[0] == 0x3F);
-}
-
-static void auto_detect_framing(const char *device_path)
-{
-    /* bps = crystal_hz / 372, rounded to nearest integer, for each common
-     * fixed-crystal option; 0 means "use the verified standard B9600". */
-    static const int bauds[] = { 0, 9892 /*3.68MHz*/, 16129 /*6MHz*/,
-                                  21505 /*8MHz*/, 26882 /*10MHz*/, 32258 /*12MHz*/ };
-    static const struct { int stopbits; char parity; } combos[] = {
-        {2, 'e'}, {1, 'e'}, {2, 'n'}, {1, 'n'}, {2, 'o'}, {1, 'o'},
-    };
-    int saved_baud = g_custom_baud, saved_stopbits = g_stopbits, saved_invert = g_invert_rts;
-    char saved_parity = g_parity;
-
-    color_yellow();
-    printf("Auto-detecting serial baud rate and framing...\n");
-    color_reset();
-    fflush(stdout);
-
-    for (size_t b = 0; b < sizeof(bauds)/sizeof(bauds[0]); b++) {
-        for (size_t i = 0; i < sizeof(combos)/sizeof(combos[0]); i++) {
-            for (int inv = 0; inv <= 1; inv++) {
-                DBG("trying baud=%s stopbits=%d parity=%c invert_rts=%d\n",
-                    bauds[b] ? "custom" : "9600(default)", combos[i].stopbits, combos[i].parity, inv);
-                if (try_one_framing(device_path, bauds[b], combos[i].stopbits, combos[i].parity, inv)) {
-                    color_green();
-                    if (bauds[b])
-                        printf("Found working config: %d bps, 8%c%d%s (first ATR byte: 0x%02X)\n",
-                               bauds[b], (combos[i].parity=='e'?'E':combos[i].parity=='o'?'O':'N'),
-                               combos[i].stopbits, inv ? " [inverted RTS]" : "", rx[0]);
-                    else
-                        printf("Found working config: 9600 bps (default), 8%c%d%s (first ATR byte: 0x%02X)\n",
-                               (combos[i].parity=='e'?'E':combos[i].parity=='o'?'O':'N'),
-                               combos[i].stopbits, inv ? " [inverted RTS]" : "", rx[0]);
-                    color_reset();
-                    return;
-                }
-            }
-        }
-    }
-
-    color_red();
-    printf("Auto-detect found no valid ATR start byte in any combination -\n");
-    printf("falling back to verified defaults. The card, wiring, or reset\n");
-    printf("line may need attention (see --baud/--stopbits/--parity/\n");
-    printf("--invert-rts/--atr-delay to keep experimenting manually).\n");
-    color_reset();
-    g_custom_baud = saved_baud;
-    g_stopbits = saved_stopbits;
-    g_parity = saved_parity;
-    g_invert_rts = saved_invert;
-}
-
-/* ---- main upload sequence, replayed in the exact traced order --------- */
 static void run(const char *device_path, int query_only)
 {
-    if (g_auto) {
-        auto_detect_framing(device_path);
-    }
-
     open_port(device_path);
     configure_port(BAUD_HANDSHAKE);
 
     reset_card();
     printf("Waiting ATR: ");
-    read_data(7);            /* ATR / initial response */
-    dbg_sleep_ms(g_atr_delay_ms); /* verified 50ms default; tunable via --atr-delay */
+    read_data(7);
+    dbg_sleep_ms(50);
 
     if (rx[1] == 0x24) {
-        color_red();
         printf("3B240030423030 (TVCAS smartcard)\n");
         printf("\nThis smartcard cannot be reprogrammed!\n");
         printf("It must first be cleaned with an ERASER-device.\n");
         printf("More: https://tvcas.com/#eraser\n");
-        color_reset();
         close_port();
         exit(1);
     } else if (rx[1] == 0x1f) {
-        color_green();
         printf("3B1F9638050320061702044010FF07089000 (THC20F17BD-V40 blank)\n");
-        color_reset();
     } else {
-        color_red();
         printf("unknown\n");
-        color_reset();
         close_port();
         exit(1);
     }
 
     if (query_only) {
-        /* argc==2 (port only, no config file): ATR-query-only mode, matching
-         * the real tool's "get ATR from COMn" usage example - don't program. */
         close_port();
         return;
     }
@@ -1000,7 +792,6 @@ static void run(const char *device_path, int query_only)
     read_data(9);
     putchar('0');
     fflush(stdout);
-    printf("\nHandshake stage 1 complete\n");
 
     close_port();
     open_port(device_path);
@@ -1021,9 +812,7 @@ static void run(const char *device_path, int query_only)
     open_port(device_path);
     configure_port(BAUD_UPLOAD);
     printf("\nSwitch speed to 224000 baud (3,57 Mhz)...");
-    color_green();
     printf("OK\nStart programming\n");
-    color_reset();
 
     {
         int off = 0;
@@ -1032,16 +821,13 @@ static void run(const char *device_path, int query_only)
             write_chunk(&PAYLOAD[off], len);
             off += len;
             if (CHUNK_DELAYS_MS[i] >= 0) dbg_sleep_ms(CHUNK_DELAYS_MS[i]);
-            printf("."); /* exact string: progress dot per chunk */
+            printf(".");
             fflush(stdout);
         }
     }
 
-    color_green();
-    printf(" OK\n"); /* exact string */
-    color_reset();
+    printf(" OK\n");
 #ifdef _WIN32
-
     dbg_sleep_ms(200);
     configure_port(BAUD_HANDSHAKE);
     dbg_sleep_ms(100);
@@ -1050,34 +836,16 @@ static void run(const char *device_path, int query_only)
         const unsigned char final_hs[] = { 0x1a, 0x03, 0x00, 0x09 };
         write_chunk(final_hs, sizeof(final_hs));
     }
-    printf("RESET CARD"); /* exact string */
-    color_green();
-    printf("OK\n");       /* exact string */
-    color_reset();
+    printf("RESET CARD");
+    printf("OK\n");
 #else
     printf("RESET CARD");
     for (int i = 0; i < 3; i++) {
         reset_card();
     }
-    color_green();
     printf("OK\n");
-    color_reset();
 #endif
     close_port();
-}
-
-static void usage(void)
-{
-    printf("****************************************************************\n");
-    printf("*                 Free CAS - https://tvcas.com                 *\n");
-    printf("*            UPLOADER FOR SMARTCARDS THC20F17BD-V40            *\n");
-    printf("*               ver.1,053 of 09.12.2023 13:17:57               *\n");
-    printf("****************************************************************\n");
-    printf("Use:\n");
-    printf("        uploader_x64 [-d] [number COM] ([config])\n\n");
-    printf("Example:\n");
-    printf("        uploader_x64 3 .\\210-000-000-0.bin   - start upload fw\n");
-    printf("        uploader_x64 3                       - get ATR from COM3\n");
 }
 
 int main(int argc, char **argv)
@@ -1088,17 +856,6 @@ int main(int argc, char **argv)
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-d") == 0) {
             g_debug = 1;
-        } else if (strcmp(argv[i], "--stopbits") == 0 && i + 1 < argc) {
-            g_stopbits = atoi(argv[++i]);
-        } else if (strcmp(argv[i], "--parity") == 0 && i + 1 < argc) {
-            char c = argv[++i][0];
-            g_parity = (c == 'n' || c == 'N') ? 'n' : (c == 'o' || c == 'O') ? 'o' : 'e';
-        } else if (strcmp(argv[i], "--invert-rts") == 0) {
-            g_invert_rts = 1;
-        } else if (strcmp(argv[i], "--no-auto") == 0) {
-            g_auto = 0;
-        } else if (strcmp(argv[i], "--atr-delay") == 0 && i + 1 < argc) {
-            g_atr_delay_ms = atoi(argv[++i]);
         } else if (!port_arg) {
             port_arg = argv[i];
         } else if (!config_path) {
@@ -1111,14 +868,6 @@ int main(int argc, char **argv)
 
     if (!port_arg) {
         usage();
-        printf("\nAdditional diagnostic flags (not part of the original tool,\n");
-        printf("useful for USB-serial/ISO7816 bridge boards that don't match\n");
-        printf("the reference hardware's exact electrical framing):\n");
-        printf("        --stopbits 1|2      (default 2, verified)\n");
-        printf("        --parity n|e|o      (default e, verified)\n");
-        printf("        --invert-rts        (flip reset-line polarity)\n");
-        printf("        --atr-delay MS      (power-up delay before reading ATR, default 50)\n");
-        printf("        --no-auto           (disable auto framing-detection)\n");
         return 1;
     }
 
@@ -1129,10 +878,6 @@ int main(int argc, char **argv)
     }
 
 #ifdef _WIN32
-    /* Real usage (verified): argv[1] is just the COM port number, e.g. "3",
-     * and the tool builds "\\.\COM3" itself. If the caller already passed
-     * something that looks like a path (contains a backslash or "COM"),
-     * use it as-is instead, so explicit full paths still work too. */
     char device_path[64];
     int looks_like_path = (strchr(port_arg, '\\') != NULL) ||
                            (strncmp(port_arg, "COM", 3) == 0) ||
@@ -1143,7 +888,6 @@ int main(int argc, char **argv)
         snprintf(device_path, sizeof(device_path), "\\\\.\\COM%s", port_arg);
     }
 #else
-    /* Linux: pass the full device path directly (e.g. /dev/ttyUSB0). */
     const char *device_path = port_arg;
 #endif
 
